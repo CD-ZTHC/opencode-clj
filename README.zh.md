@@ -1,6 +1,6 @@
 # OpenCode Clojure 客户端
 
-一个全面的 Clojure 客户端库，用于与 [opencode-server](https://github.com/opencode-server/opencode-server) REST API 进行交互。该库为所有 opencode-server 功能提供了符合 Clojure 习惯的包装器，使您能够轻松地将 AI 驱动的编码助手集成到 Clojure 应用程序中。
+一个全面的 Clojure 客户端库，用于与 [opencode-server](https://github.com/sst/opencode) REST API 进行交互。该库为所有 opencode-server 功能提供了符合 Clojure 习惯的包装器，使您能够轻松地将 AI 驱动的编码助手集成到 Clojure 应用程序中。
 
 ## 特性
 
@@ -64,8 +64,8 @@ opencode-clj {:mvn/version "0.1.0-SNAPSHOT"}
     (println "创建会话成功:" (:id session))
 
     ;; 发送提示
-    (let [response (opencode/send-prompt test-client 
-                                        (:id session) 
+    (let [response (opencode/send-prompt test-client
+                                        (:id session)
                                         {:text "你好，你能帮我写一个 Python 的 hello world 函数吗？"}
                                         "user-chat-assistant")]
       (println "响应:" response))
@@ -84,7 +84,7 @@ opencode-clj {:mvn/version "0.1.0-SNAPSHOT"}
 
 ```clojure
 ;; 创建带选项的客户端
-(def client (opencode/client "http://127.0.0.1:9711" 
+(def client (opencode/client "http://127.0.0.1:9711"
                             {:directory "/path/to/project"
                              :http-opts {:timeout 5000}}))
 ```
@@ -118,8 +118,8 @@ opencode-clj {:mvn/version "0.1.0-SNAPSHOT"}
 
 ```clojure
 ;; 向 AI 发送提示
-(opencode/send-prompt client session-id 
-                     {:text "帮我调试这段代码"} 
+(opencode/send-prompt client session-id
+                     {:text "帮我调试这段代码"}
                      "user-chat-assistant")
 
 ;; 列出会话中的消息
@@ -268,10 +268,10 @@ lein uberjar
 
 ## 许可证
 
-本项目采用 EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0 许可证 - 有关详细信息，请参阅 [LICENSE](LICENSE) 文件。
+本项目采用 MIT 许可证 - 有关详细信息，请参阅 [LICENSE](LICENSE) 文件。
 
 ## 支持
 
-- 问题：[GitHub Issues](https://github.com/opencode-clj/opencode-clj/issues)
-- 文档：[API 参考](https://github.com/opencode-clj/opencode-clj/wiki)
-- OpenCode 服务器：[opencode-server](https://github.com/opencode-server/opencode-server)
+- 问题：[GitHub Issues](https://github.com/CD-ZTHC/opencode-clj/issues)
+- 文档：[API 参考](https://github.com/CD-ZTHC/opencode-clj/wiki)
+- OpenCode 服务器：[opencode-server](https://github.com/sst/opencode)
