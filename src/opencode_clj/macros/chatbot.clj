@@ -1,5 +1,10 @@
 (ns opencode-clj.macros.chatbot
-  "Chatbot-specific macros for opencode-clj SDK")
+  "Chatbot-specific macros for opencode-clj SDK"
+  (:require [clojure.core.async :as async]
+            [clojure.string :as str]))
+
+;; Global chat handlers storage
+(def ^:dynamic chat-handlers (atom {}))
 
 (defmacro def-chatbot
   "Define a chatbot with configuration"
@@ -7,20 +12,20 @@
   (let [config-map (apply hash-map config)]
     `(def ~name
        (merge
-        {:client (opencode-clj.core/client "http://127.0.0.1:9711")
-         :default-model {:providerID "anthropic" :modelID "claude-3"}
-         :system-prompt "You are a helpful AI assistant"
-         :tools {:bash true :edit true :webfetch true}
-         :max-tokens 4000
-         :temperature 0.7}
-        ~config-map))))
+         {:client        {:base-url "http://127.0.0.1:9711"}
+          :default-model {:providerID "anthropic" :modelID "claude-3"}
+          :system-prompt "You are a helpful AI assistant"
+          :tools         {:bash true :edit true :webfetch true}
+          :max-tokens    4000
+          :temperature   0.7}
+         ~config-map))))
 
 (defmacro chat-session
   "Create a chat session with event handlers"
   [bot & handlers]
   `(let [bot# ~bot
-         session# (opencode-clj.core/create-session (:client bot#)
-                                                    {:title (or (:title bot#) "Chat Session")})
+         session# {:id    (str "session-" (rand-int 10000))
+                   :title (or (:title bot#) "Chat Session")}
          handlers# (apply merge ~handlers)]
      (println "Chat session created:" (:id session#))
      ;; Store handlers for later use
@@ -86,5 +91,12 @@
                           (swap! ~'state# assoc :mode ~'to#)
                           (~'transform-fn# @~'state#)))))))
 
-;; Global chat handlers storage
-(def ^:dynamic chat-handlers (atom {}))
+
+(comment
+  (def-chatbot my-bot
+               :title "My Demo Bot"
+               :default-model {:providerID "zai-coding-plan" :modelID "glm-4.6"}
+               :system-prompt "You are a helpful coding assistant"
+               :temperature 0.8)
+
+  )

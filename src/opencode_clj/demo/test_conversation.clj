@@ -1,9 +1,11 @@
-(ns opencode-clj.test-conversation
+(ns opencode-clj.demo.test-conversation
   (:require [opencode-clj.core :as opencode]
             [opencode-clj.macros.core :as macros]))
 
 ;; 创建客户端连接到opencode服务器
 (macros/defopencode test-client "http://127.0.0.1:9711")
+
+(def agent-name (-> (opencode/list-agents test-client) last :name))
 
 (defn test-basic-conversation []
   (println "=== 开始基础对话测试 ===")
@@ -13,12 +15,12 @@
     (println "创建会话成功:" (:id session))
 
     ;; 发送第一条消息
-    (let [response1 (opencode/send-prompt test-client (:id session) {:text "你好，请介绍一下你自己"} "user-chat-assistant")]
+    (let [response1 (opencode/send-prompt test-client (:id session) {:text "你好，请介绍一下你自己"} agent-name)]
       (println "发送第一条消息成功")
       (println "响应:" response1))
 
     ;; 发送第二条消息
-    (let [response2 (opencode/send-prompt test-client (:id session) {:text "你能帮我写一个python的hello world函数吗？"} "user-chat-assistant")]
+    (let [response2 (opencode/send-prompt test-client (:id session) {:text "你能帮我写一个python的hello world函数吗？"} agent-name)]
       (println "发送第二条消息成功")
       (println "响应:" response2))
 

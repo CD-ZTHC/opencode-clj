@@ -50,7 +50,7 @@
                          {:error ~'e#}))]
        (if (and (:error ~'result#) (< ~'attempt# ~max-retries))
          (do
-           (Thread/sleep (* 1000 (Math/pow 2 ~'attempt#)))
+           (^[long] Thread/sleep (* 1000 (Math/pow 2 ~'attempt#)))
            (recur (inc ~'attempt#)))
          ~'result#))))
 
@@ -85,7 +85,7 @@
              ~'time-since# (- ~'now# @~'last-execution#)]
          (if (< ~'time-since# ~'interval#)
            (do
-             (Thread/sleep (- ~'interval# ~'time-since#))
+             (^[long] Thread/sleep (- ~'interval# ~'time-since#))
              (reset! ~'last-execution# (System/currentTimeMillis)))
            (reset! ~'last-execution# ~'now#))
          (apply ~operation ~'args#)))))

@@ -1,5 +1,6 @@
 (ns opencode-clj.macros.core
-  "Core macros for opencode-clj SDK")
+  "Core macros for opencode-clj SDK"
+  (:require [opencode-clj.client :as client]))
 
 (defmacro defopencode
   "Define a configured opencode client with auto-imported functions"
@@ -15,59 +16,39 @@
 
 (defmacro with-session
   "Execute operations within a session context"
-  [session-id client & body]
-  `(let [~'session-id ~session-id
-         ~'client ~client]
-     ~@body))
+  [client & body]
+  `(let [session# (opencode-clj.core/create-session ~client)]
+     (try
+       (binding [client/*session* session#]
+         ~@body)
+       (finally
+         (opencode-clj.sessions/delete-session-internal ~client session#)))))
 
-(defmacro where
-  "Build query parameters in a readable way"
-  [& params]
-  (into {} (map vec (partition 2 params))))
+(defn make-session-aware
+  "Create a session-aware version of a function"
+  [original-fn fn-name]
+  (fn [client & args]
+    (if-let [dynamic-session client/*session*]
+      ;; Has dynamic session: automatically insert session parameter
+      (apply original-fn client dynamic-session args)
+      ;; No dynamic session: check if first arg is session-id
+      (if (and (seq args) (string? (first args)))
+        (apply original-fn client args)
+        (throw (ex-info (str "No session available for " fn-name
+                             ". Use within with-session block or provide session-id.")
+                        {:function fn-name}))))))
 
-(defmacro select
-  "Select specific fields for API response"
-  [& fields]
-  (vec fields))
+(defmacro def-session-fn
+  "Define a function that works with both explicit session-id and dynamic session"
+  [name docstring arg-list & body]
+  (let [internal-name (symbol (str name "-internal"))]
+    `(do
+       ;; Internal function with original implementation
+       (defn ~internal-name ~docstring ~arg-list ~@body)
 
-(defmacro ->success
-  "Handle successful API response"
-  [response & body]
-  `(let [~'result# ~response]
-     (if (:success ~'result#)
-       (do ~@body)
-       ~'result#)))
-
-(defmacro ->error
-  "Handle error API response"
-  [response & body]
-  `(let [~'result# ~response]
-     (if (not (:success ~'result#))
-       (do ~@body)
-       ~'result#)))
-
-(defmacro try-api
-  "Unified API call error handling"
-  [& body]
-  `(try
-     ~@body
-     (catch clojure.lang.ExceptionInfo e#
-       (let [data# (ex-data e#)]
-         (case (:error data#)
-           :not-found (throw (ex-info "Not found" {:error :not-found}))
-           :bad-request (throw (ex-info "Bad request" {:error :bad-request}))
-           :server-error (throw (ex-info "Server error" {:error :server-error}))
-           (throw e#))))))
-
-(defmacro batch
-  "Execute multiple operations in batch"
-  [client & operations]
-  `(mapv (fn [~'op#] (~'op# ~client)) [~@operations]))
-
-(defmacro parallel
-  "Execute multiple operations in parallel"
-  [client & operations]
-  `(let [~'ops# [~@operations]]
-     (mapv deref
-           (doall (for [~'op# ~'ops#]
-                    (future (~'op# ~client)))))))
+       ;; Public function with session-aware behavior
+       (def ~name
+         (with-meta
+           (make-session-aware ~internal-name ~(str name))
+           {:doc ~docstring
+            :arglists '(~arg-list [client & args])})))))

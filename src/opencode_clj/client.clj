@@ -3,20 +3,25 @@
   (:require [clj-http.client :as http]
             [clojure.string :as str]))
 
+(def ^:dynamic *session* nil)
+
+(defn session-id [session-id]
+  (if (map? session-id) (:id session-id) session-id))
+
 (defn default-opts
   "Default HTTP client options"
   []
   {:throw-exceptions false
-   :as :json
-   :coerce :always
-   :content-type :json
-   :accept :json})
+   :as               :json
+   :coerce           :always
+   :content-type     :json
+   :accept           :json})
 
 (defn build-url
   "Build full URL from base URL and endpoint path"
   [base-url endpoint]
-  (let [base (str/replace base-url #"/$" "")  ; Remove trailing slash from base
-        path (str/replace endpoint #"^/" "")]   ; Remove leading slash from endpoint
+  (let [base (str/replace base-url #"/$" "")                ; Remove trailing slash from base
+        path (str/replace endpoint #"^/" "")]               ; Remove leading slash from endpoint
     (str base "/" path)))
 
 (defn add-query-params
