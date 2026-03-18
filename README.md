@@ -1,4 +1,4 @@
-# OpenCode-Clj
+# Anima-Agent-Clj
 
 A comprehensive Clojure client library and agent cluster framework for building scalable, multi-channel AI applications with the [opencode-server](https://github.com/sst/opencode) REST API.
 
@@ -114,13 +114,13 @@ A comprehensive Clojure client library and agent cluster framework for building 
 Add the following dependency to your `project.clj`:
 
 ```clojure
-[opencode-clj "0.1.0-SNAPSHOT"]
+[anima-agent-clj "0.1.0-SNAPSHOT"]
 ```
 
 Or in your `deps.edn`:
 
 ```clojure
-opencode-clj {:mvn/version "0.1.0-SNAPSHOT"}
+anima-agent-clj {:mvn/version "0.1.0-SNAPSHOT"}
 ```
 
 ## Quick Start
@@ -129,7 +129,7 @@ opencode-clj {:mvn/version "0.1.0-SNAPSHOT"}
 
 ```clojure
 (ns my-app.core
-  (:require [opencode-clj.core :as opencode]))
+  (:require [anima-agent-clj.core :as opencode]))
 
 ;; Create a client connected to your opencode-server
 (def client (opencode/client "http://127.0.0.1:9711"))
@@ -146,13 +146,13 @@ opencode-clj {:mvn/version "0.1.0-SNAPSHOT"}
 
 ```clojure
 (ns my-app.core
-  (:require [opencode-clj.bus :as bus]
-            [opencode-clj.agent :as agent]
-            [opencode-clj.channel :as ch]
-            [opencode-clj.channel.cli :as cli]
-            [opencode-clj.channel.registry :as registry]
-            [opencode-clj.channel.dispatch :as dispatch]
-            [opencode-clj.channel.session :as session]))
+  (:require [anima-agent-clj.bus :as bus]
+            [anima-agent-clj.agent :as agent]
+            [anima-agent-clj.channel :as ch]
+            [anima-agent-clj.channel.cli :as cli]
+            [anima-agent-clj.channel.registry :as registry]
+            [anima-agent-clj.channel.dispatch :as dispatch]
+            [anima-agent-clj.channel.session :as session]))
 
 ;; Create infrastructure
 (let [msg-bus (bus/create-bus)
@@ -178,7 +178,7 @@ opencode-clj {:mvn/version "0.1.0-SNAPSHOT"}
 ### 3. Intelligent Task Routing
 
 ```clojure
-(require '[opencode-clj.agent.intelligent-router :as router])
+(require '[anima-agent-clj.agent.intelligent-router :as router])
 
 ;; Create intelligent router
 (def router (router/create-intelligent-router
@@ -215,7 +215,7 @@ opencode-clj {:mvn/version "0.1.0-SNAPSHOT"}
 ### CLI Channel
 
 ```clojure
-(require '[opencode-clj.channel.cli :as cli])
+(require '[anima-agent-clj.channel.cli :as cli])
 
 (def cli-ch (cli/create-cli-channel
              {:session-store store
@@ -228,7 +228,7 @@ opencode-clj {:mvn/version "0.1.0-SNAPSHOT"}
 ### RabbitMQ Channel
 
 ```clojure
-(require '[opencode-clj.channel.rabbitmq :as rmq])
+(require '[anima-agent-clj.channel.rabbitmq :as rmq])
 
 (def rmq-ch (rmq/create-rabbitmq-channel
              {:uri "amqp://guest:guest@localhost:5672"
@@ -242,7 +242,7 @@ opencode-clj {:mvn/version "0.1.0-SNAPSHOT"}
 ### Custom Channels
 
 ```clojure
-(require '[opencode-clj.channel :as ch])
+(require '[anima-agent-clj.channel :as ch])
 
 (defrecord MyChannel [config running?]
   ch/Channel
@@ -335,11 +335,11 @@ Type 'status' to check progress
 
 ```bash
 # Start interactive CLI
-lein run -m opencode-clj.cli-main
+lein run -m anima-agent-clj.cli-main
 
 # With custom options
-lein run -m opencode-clj.cli-main -- --url http://my-server:9711
-lein run -m opencode-clj.cli-main -- --prompt 'ai> '
+lein run -m anima-agent-clj.cli-main -- --url http://my-server:9711
+lein run -m anima-agent-clj.cli-main -- --prompt 'ai> '
 ```
 
 ### CLI Commands
@@ -356,7 +356,7 @@ lein run -m opencode-clj.cli-main -- --prompt 'ai> '
 
 ```bash
 lein test
-lein test opencode-clj.core-test
+lein test anima-agent-clj.core-test
 ```
 
 ## Building
@@ -369,26 +369,26 @@ lein uberjar
 ## Namespace Structure
 
 ```
-opencode-clj.cluster
+anima-agent-clj.cluster
 ├── core                    ; Cluster core
 ├── node                    ; Node management
 ├── coordinator             ; Cluster coordinator
 └── topology                ; Topology management
 
-opencode-clj.bus
+anima-agent-clj.bus
 ├── core                    ; Bus core
 ├── inbound                 ; Inbound bus
 ├── outbound                ; Outbound bus
 ├── internal                ; Internal bus
 └── control                 ; Control bus
 
-opencode-clj.dispatcher
+anima-agent-clj.dispatcher
 ├── core                    ; Dispatcher core
 ├── router                  ; Routing strategies
 ├── balancer                ; Load balancing
 └── circuit-breaker         ; Circuit breaker
 
-opencode-clj.agent
+anima-agent-clj.agent
 ├── core                    ; Agent core
 ├── core-agent              ; Core Agent
 ├── worker-agent            ; Worker Agent
@@ -398,25 +398,25 @@ opencode-clj.agent
 ├── intelligent-router      ; Intelligent Routing
 └── ai-classifier           ; AI-powered Classification
 
-opencode-clj.context
+anima-agent-clj.context
 ├── core                    ; Context core
 ├── manager                 ; Context Manager
 ├── storage                 ; Storage layer
 └── compression             ; Compression/Summary
 
-opencode-clj.cache
+anima-agent-clj.cache
 ├── core                    ; Cache core
 ├── l1                      ; L1 Cache
 ├── l2                      ; L2 Cache
 └── l3                      ; L3 Cache (Redis)
 
-opencode-clj.pipeline
+anima-agent-clj.pipeline
 ├── core                    ; Pipeline core
 ├── source                  ; Data source
 ├── transform               ; Transformer
 └── sink                    ; Data sink
 
-opencode-clj.channel
+anima-agent-clj.channel
 ├── core                    ; Channel protocol
 ├── adapter                 ; Adapter
 ├── cli                     ; CLI Channel
@@ -440,6 +440,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- Issues: [GitHub Issues](https://github.com/CD-ZTHC/opencode-clj/issues)
-- Documentation: [API Reference](https://github.com/CD-ZTHC/opencode-clj/wiki)
+- Issues: [GitHub Issues](https://github.com/anima-agent-clj/anima-agent-clj/issues)
+- Documentation: [API Reference](https://github.com/anima-agent-clj/anima-agent-clj/wiki)
 - OpenCode Server: [opencode-server](https://github.com/sst/opencode)

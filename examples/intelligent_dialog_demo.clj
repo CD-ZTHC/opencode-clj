@@ -12,14 +12,14 @@
    [clojure.core.async :as async]
    [clojure.pprint :refer [pprint]]
    [clojure.string :as str]
-   [opencode-clj.bus :as bus]
-   [opencode-clj.agent.task-classifier :as classifier]
-   [opencode-clj.agent.intelligent-router :as router]
-   [opencode-clj.agent.specialist-pool :as specialist-pool]
-   [opencode-clj.dispatcher.core :as dispatcher]
-   [opencode-clj.dispatcher.balancer :as balancer]
-   [opencode-clj.dispatcher.circuit-breaker :as cb]
-   [opencode-clj.metrics :as metrics])
+   [anima-agent-clj.bus :as bus]
+   [anima-agent-clj.agent.task-classifier :as classifier]
+   [anima-agent-clj.agent.intelligent-router :as router]
+   [anima-agent-clj.agent.specialist-pool :as specialist-pool]
+   [anima-agent-clj.dispatcher.core :as dispatcher]
+   [anima-agent-clj.dispatcher.balancer :as balancer]
+   [anima-agent-clj.dispatcher.circuit-breaker :as cb]
+   [anima-agent-clj.metrics :as metrics])
   (:import [java.util UUID Date]))
 
 ;; ══════════════════════════════════════════════════════════════════════════════

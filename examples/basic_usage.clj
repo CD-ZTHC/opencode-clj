@@ -1,6 +1,6 @@
 (ns basic-usage
-  "Basic usage examples for opencode-clj"
-  (:require [opencode-clj.core :as opencode]))
+  "Basic usage examples for anima-agent-clj"
+  (:require [anima-agent-clj.core :as opencode]))
 
 ;; ============================================================================
 ;; Client Creation

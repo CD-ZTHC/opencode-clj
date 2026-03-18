@@ -9,15 +9,15 @@
 
    Architecture:
    User → Channel → Bus.inbound → Agent → Bus.outbound → Dispatch → Channel → User"
-  (:require [opencode-clj.channel :as ch]
-            [opencode-clj.channel.cli :as cli]
-            [opencode-clj.channel.rabbitmq :as rmq]
-            [opencode-clj.channel.registry :as registry]
-            [opencode-clj.channel.session :as session]
-            [opencode-clj.channel.dispatch :as dispatch]
-            [opencode-clj.bus :as bus]
-            [opencode-clj.agent :as agent]
-            [opencode-clj.core :as opencode]
+  (:require [anima-agent-clj.channel :as ch]
+            [anima-agent-clj.channel.cli :as cli]
+            [anima-agent-clj.channel.rabbitmq :as rmq]
+            [anima-agent-clj.channel.registry :as registry]
+            [anima-agent-clj.channel.session :as session]
+            [anima-agent-clj.channel.dispatch :as dispatch]
+            [anima-agent-clj.bus :as bus]
+            [anima-agent-clj.agent :as agent]
+            [anima-agent-clj.core :as opencode]
             [clojure.core.async :as async]))
 
 ;; ════════════════════════════════════════════════════════════════════════════
@@ -164,9 +164,9 @@
 
         ;; Create sessions with different routing keys
         sess1 (session/create-session store "rabbitmq"
-                                      {:routing-key "opencode.session.user-123"})
+                                      {:routing-key "anima.session.user-123"})
         sess2 (session/create-session store "rabbitmq"
-                                      {:routing-key "opencode.session.user-456"})]
+                                      {:routing-key "anima.session.user-456"})]
 
     (println "Created sessions:")
     (println "  Session 1:" (:id sess1) "->" (:routing-key sess1))
@@ -175,9 +175,9 @@
     ;; Find existing session by routing key
     (println "\nLooking up sessions...")
     (let [found1 (session/find-or-create-session store "rabbitmq"
-                                                 {:routing-key "opencode.session.user-123"})
+                                                 {:routing-key "anima.session.user-123"})
           found2 (session/find-or-create-session store "rabbitmq"
-                                                 {:routing-key "opencode.session.user-456"})
+                                                 {:routing-key "anima.session.user-456"})
           ;; This one will create a new session
           found3 (session/find-or-create-session store "web" {})]
 

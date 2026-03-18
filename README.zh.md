@@ -1,4 +1,4 @@
-# OpenCode-Clj
+# Anima-Agent-Clj
 
 一个全面的 Clojure 客户端库和 Agent 集群框架，用于与 [opencode-server](https://github.com/sst/opencode) REST API 交互，构建可扩展的多通道 AI 应用。
 
@@ -119,13 +119,13 @@
 在 `project.clj` 中添加依赖：
 
 ```clojure
-[opencode-clj "0.1.0-SNAPSHOT"]
+[anima-agent-clj "0.1.0-SNAPSHOT"]
 ```
 
 或在 `deps.edn` 中：
 
 ```clojure
-opencode-clj {:mvn/version "0.1.0-SNAPSHOT"}
+anima-agent-clj {:mvn/version "0.1.0-SNAPSHOT"}
 ```
 
 ## 快速开始
@@ -134,7 +134,7 @@ opencode-clj {:mvn/version "0.1.0-SNAPSHOT"}
 
 ```clojure
 (ns my-app.core
-  (:require [opencode-clj.core :as opencode]))
+  (:require [anima-agent-clj.core :as opencode]))
 
 ;; 创建连接到 opencode-server 的客户端
 (def client (opencode/client "http://127.0.0.1:9711"))
@@ -151,13 +151,13 @@ opencode-clj {:mvn/version "0.1.0-SNAPSHOT"}
 
 ```clojure
 (ns my-app.core
-  (:require [opencode-clj.bus :as bus]
-            [opencode-clj.agent :as agent]
-            [opencode-clj.channel :as ch]
-            [opencode-clj.channel.cli :as cli]
-            [opencode-clj.channel.registry :as registry]
-            [opencode-clj.channel.dispatch :as dispatch]
-            [opencode-clj.channel.session :as session]))
+  (:require [anima-agent-clj.bus :as bus]
+            [anima-agent-clj.agent :as agent]
+            [anima-agent-clj.channel :as ch]
+            [anima-agent-clj.channel.cli :as cli]
+            [anima-agent-clj.channel.registry :as registry]
+            [anima-agent-clj.channel.dispatch :as dispatch]
+            [anima-agent-clj.channel.session :as session]))
 
 ;; 创建基础设施
 (let [msg-bus (bus/create-bus)
@@ -183,7 +183,7 @@ opencode-clj {:mvn/version "0.1.0-SNAPSHOT"}
 ### 3. 智能任务路由
 
 ```clojure
-(require '[opencode-clj.agent.intelligent-router :as router])
+(require '[anima-agent-clj.agent.intelligent-router :as router])
 
 ;; 创建智能路由器
 (def router (router/create-intelligent-router
@@ -298,11 +298,11 @@ lein run -m realtime-multi-agent-demo -- --url http://my-server:9711
 
 ```bash
 # 启动交互式 CLI
-lein run -m opencode-clj.cli-main
+lein run -m anima-agent-clj.cli-main
 
 # 使用自定义选项
-lein run -m opencode-clj.cli-main -- --url http://my-server:9711
-lein run -m opencode-clj.cli-main -- --prompt 'ai> '
+lein run -m anima-agent-clj.cli-main -- --url http://my-server:9711
+lein run -m anima-agent-clj.cli-main -- --prompt 'ai> '
 ```
 
 ### CLI 命令
@@ -319,7 +319,7 @@ lein run -m opencode-clj.cli-main -- --prompt 'ai> '
 
 ```bash
 lein test
-lein test opencode-clj.core-test
+lein test anima-agent-clj.core-test
 ```
 
 ## 构建
@@ -332,26 +332,26 @@ lein uberjar
 ## 命名空间结构
 
 ```
-opencode-clj.cluster
+anima-agent-clj.cluster
 ├── core                    ; 集群核心
 ├── node                    ; 节点管理
 ├── coordinator             ; 集群协调器
 └── topology                ; 拓扑管理
 
-opencode-clj.bus
+anima-agent-clj.bus
 ├── core                    ; 总线核心
 ├── inbound                 ; 入站总线
 ├── outbound                ; 出站总线
 ├── internal                ; 内部总线
 └── control                 ; 控制总线
 
-opencode-clj.dispatcher
+anima-agent-clj.dispatcher
 ├── core                    ; 调度器核心
 ├── router                  ; 路由策略
 ├── balancer                ; 负载均衡
 └── circuit-breaker         ; 熔断器
 
-opencode-clj.agent
+anima-agent-clj.agent
 ├── core                    ; Agent 核心
 ├── core-agent              ; 核心 Agent
 ├── worker-agent            ; Worker Agent
@@ -361,25 +361,25 @@ opencode-clj.agent
 ├── intelligent-router      ; 智能路由
 └── ai-classifier           ; AI 分类器
 
-opencode-clj.context
+anima-agent-clj.context
 ├── core                    ; 上下文核心
 ├── manager                 ; 上下文管理器
 ├── storage                 ; 存储层
 └── compression             ; 压缩/摘要
 
-opencode-clj.cache
+anima-agent-clj.cache
 ├── core                    ; 缓存核心
 ├── l1                      ; L1 缓存
 ├── l2                      ; L2 缓存
 └── l3                      ; L3 缓存 (Redis)
 
-opencode-clj.pipeline
+anima-agent-clj.pipeline
 ├── core                    ; Pipeline 核心
 ├── source                  ; 数据源
 ├── transform               ; 转换器
 └── sink                    ; 数据目标
 
-opencode-clj.channel
+anima-agent-clj.channel
 ├── core                    ; Channel 协议
 ├── adapter                 ; 适配器
 ├── cli                     ; CLI Channel
@@ -403,6 +403,6 @@ opencode-clj.channel
 
 ## 支持
 
-- 问题反馈: [GitHub Issues](https://github.com/CD-ZTHC/opencode-clj/issues)
-- 文档: [API 参考](https://github.com/CD-ZTHC/opencode-clj/wiki)
+- 问题反馈: [GitHub Issues](https://github.com/anima-agent-clj/anima-agent-clj/issues)
+- 文档: [API 参考](https://github.com/anima-agent-clj/anima-agent-clj/wiki)
 - OpenCode 服务器: [opencode-server](https://github.com/sst/opencode)

@@ -41,13 +41,13 @@
    [clojure.string :as str]
    [cheshire.core :as json]
    [clj-http.client :as http]
-   [opencode-clj.core :as opencode]
-   [opencode-clj.bus :as bus]
-   [opencode-clj.channel :as channel]
-   [opencode-clj.agent.orchestrator :as orchestrator]
-   [opencode-clj.agent.specialist-pool :as specialist-pool]
-   [opencode-clj.agent.ai-classifier :as ai-classifier]
-   [opencode-clj.metrics :as metrics])
+   [anima-agent-clj.core :as opencode]
+   [anima-agent-clj.bus :as bus]
+   [anima-agent-clj.channel :as channel]
+   [anima-agent-clj.agent.orchestrator :as orchestrator]
+   [anima-agent-clj.agent.specialist-pool :as specialist-pool]
+   [anima-agent-clj.agent.ai-classifier :as ai-classifier]
+   [anima-agent-clj.metrics :as metrics])
   (:import [java.util UUID Date]))
 
 ;; ══════════════════════════════════════════════════════════════════════════════

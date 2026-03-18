@@ -15,24 +15,24 @@
    [clojure.core.async :as async]
    [clojure.pprint :refer [pprint]]
    ;; Dispatcher components
-   [opencode-clj.dispatcher.core :as dispatcher]
-   [opencode-clj.dispatcher.balancer :as balancer]
-   [opencode-clj.dispatcher.circuit-breaker :as cb]
+   [anima-agent-clj.dispatcher.core :as dispatcher]
+   [anima-agent-clj.dispatcher.balancer :as balancer]
+   [anima-agent-clj.dispatcher.circuit-breaker :as cb]
    ;; Agent components
-   [opencode-clj.agent.worker-pool :as worker-pool]
-   [opencode-clj.agent.worker-agent :as worker]
-   [opencode-clj.agent.parallel-pool :as parallel-pool]
-   [opencode-clj.agent.specialist-pool :as specialist-pool]
+   [anima-agent-clj.agent.worker-pool :as worker-pool]
+   [anima-agent-clj.agent.worker-agent :as worker]
+   [anima-agent-clj.agent.parallel-pool :as parallel-pool]
+   [anima-agent-clj.agent.specialist-pool :as specialist-pool]
    ;; Pipeline components
-   [opencode-clj.pipeline.core :as pipeline]
-   [opencode-clj.pipeline.source :as source]
-   [opencode-clj.pipeline.transform :as transform]
-   [opencode-clj.pipeline.sink :as sink]
+   [anima-agent-clj.pipeline.core :as pipeline]
+   [anima-agent-clj.pipeline.source :as source]
+   [anima-agent-clj.pipeline.transform :as transform]
+   [anima-agent-clj.pipeline.sink :as sink]
    ;; Cache components
-   [opencode-clj.cache.lru :as lru]
-   [opencode-clj.cache.ttl :as ttl]
+   [anima-agent-clj.cache.lru :as lru]
+   [anima-agent-clj.cache.ttl :as ttl]
    ;; Metrics
-   [opencode-clj.metrics :as metrics])
+   [anima-agent-clj.metrics :as metrics])
   (:import [java.util UUID Date]))
 
 ;; ══════════════════════════════════════════════════════════════════════════════
