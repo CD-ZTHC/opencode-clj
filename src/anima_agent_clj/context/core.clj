@@ -17,6 +17,7 @@
    (def manager (context-manager/create-manager {:enable-l2 true}))
    (context-manager/set-context! manager \"session:123\" {:history [...]})
    (context-manager/get-context manager \"session:123\")"
+  (:require [clojure.string :as str])
   (:import [java.util UUID Date]))
 
 ;; ══════════════════════════════════════════════════════════════════════════════

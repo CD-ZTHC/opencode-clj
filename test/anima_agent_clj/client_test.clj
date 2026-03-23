@@ -7,8 +7,7 @@
   (testing "Default HTTP options are set correctly"
     (let [opts (client/default-opts)]
       (is (false? (:throw-exceptions opts)))
-      (is (= :json (:as opts)))
-      (is (= :always (:coerce opts)))
+      (is (= :text (:as opts)))
       (is (= :json (:content-type opts)))
       (is (= :json (:accept opts))))))
 
@@ -33,16 +32,16 @@
 
 (deftest test-parse-response
   (testing "Parse successful responses"
-    (let [response-200 {:status 200 :body {:data "test"}}
-          response-201 {:status 201 :body {:id "123"}}]
+    (let [response-200 {:status 200 :body "{\"data\":\"test\"}"}
+          response-201 {:status 201 :body "{\"id\":\"123\"}"}]
       (is (= {:success true :data {:data "test"}} (client/parse-response response-200)))
       (is (= {:success true :data {:id "123"}} (client/parse-response response-201)))))
 
   (testing "Parse error responses"
-    (let [response-400 {:status 400 :body {:error "Bad request"}}
-          response-404 {:status 404 :body {:error "Not found"}}
-          response-500 {:status 500 :body {:error "Server error"}}
-          response-999 {:status 999 :body {:error "Unknown"}}]
+    (let [response-400 {:status 400 :body "{\"error\":\"Bad request\"}"}
+          response-404 {:status 404 :body "{\"error\":\"Not found\"}"}
+          response-500 {:status 500 :body "{\"error\":\"Server error\"}"}
+          response-999 {:status 999 :body "{\"error\":\"Unknown\"}"}]
       (is (= {:success false :error :bad-request :data {:error "Bad request"}}
              (client/parse-response response-400)))
       (is (= {:success false :error :not-found :data {:error "Not found"}}
@@ -56,9 +55,9 @@
   (testing "GET request with client configuration"
     (with-redefs [http/get (fn [url opts]
                              (is (= "http://127.0.0.1:9711/api" url))
-                             (is (= :json (:as opts)))
+                             (is (= :text (:as opts)))
                              (is (= {:limit 10} (:query-params opts)))
-                             {:status 200 :body {:data "test"}})]
+                             {:status 200 :body "{\"data\":\"test\"}"})]
       (let [client {:base-url "http://127.0.0.1:9711" :directory "/tmp" :http-opts {}}]
         (client/get-request client "/api" {:limit 10})))))
 
@@ -66,9 +65,9 @@
   (testing "POST request with client configuration"
     (with-redefs [http/post (fn [url opts]
                               (is (= "http://127.0.0.1:9711/api" url))
-                              (is (= {:data "test"} (:form-params opts)))
-                              (is (= :json (:as opts)))
-                              {:status 201 :body {:id "123"}})]
+                              (is (string? (:body opts)))
+                              (is (= :text (:as opts)))
+                              {:status 201 :body "{\"id\":\"123\"}"})]
       (let [client {:base-url "http://127.0.0.1:9711" :directory "/tmp" :http-opts {}}]
         (client/post-request client "/api" {:data "test"})))))
 
@@ -76,9 +75,9 @@
   (testing "PATCH request with client configuration"
     (with-redefs [http/patch (fn [url opts]
                                (is (= "http://127.0.0.1:9711/api" url))
-                               (is (= {:title "Updated"} (:form-params opts)))
-                               (is (= :json (:as opts)))
-                               {:status 200 :body {:id "123"}})]
+                               (is (string? (:body opts)))
+                               (is (= :text (:as opts)))
+                               {:status 200 :body "{\"id\":\"123\"}"})]
       (let [client {:base-url "http://127.0.0.1:9711" :directory "/tmp" :http-opts {}}]
         (client/patch-request client "/api" {:title "Updated"})))))
 
@@ -86,9 +85,9 @@
   (testing "PUT request with client configuration"
     (with-redefs [http/put (fn [url opts]
                              (is (= "http://127.0.0.1:9711/api" url))
-                             (is (= {:data "replace"} (:form-params opts)))
-                             (is (= :json (:as opts)))
-                             {:status 200 :body {:id "123"}})]
+                             (is (string? (:body opts)))
+                             (is (= :text (:as opts)))
+                             {:status 200 :body "{\"id\":\"123\"}"})]
       (let [client {:base-url "http://127.0.0.1:9711" :directory "/tmp" :http-opts {}}]
         (client/put-request client "/api" {:data "replace"})))))
 
@@ -96,9 +95,9 @@
   (testing "DELETE request with client configuration"
     (with-redefs [http/delete (fn [url opts]
                                 (is (= "http://127.0.0.1:9711/api" url))
-                                (is (= :json (:as opts)))
+                                (is (= :text (:as opts)))
                                 (is (= {:force true} (:query-params opts)))
-                                {:status 200 :body {}})]
+                                {:status 200 :body "{}"})]
       (let [client {:base-url "http://127.0.0.1:9711" :directory "/tmp" :http-opts {}}]
         (client/delete-request client "/api" {:force true})))))
 
@@ -108,7 +107,7 @@
                              (is (= "http://127.0.0.1:9711/api" url))
                              (is (= 10000 (:timeout opts)))
                              (is (= "Bearer token" (get-in opts [:headers "Authorization"])))
-                             {:status 200 :body {:data "test"}})]
+                             {:status 200 :body "{\"data\":\"test\"}"})]
       (let [client {:base-url "http://127.0.0.1:9711"
                     :http-opts {:timeout 10000
                                 :headers {"Authorization" "Bearer token"}}}]
@@ -119,7 +118,7 @@
     (with-redefs [http/get (fn [url opts]
                              (is (= "http://127.0.0.1:9711/api" url))
                              (is (= "/project" (:directory (:query-params opts))))
-                             {:status 200 :body {:data "test"}})]
+                             {:status 200 :body "{\"data\":\"test\"}"})]
       (let [client {:base-url "http://127.0.0.1:9711" :directory "/project" :http-opts {}}]
         (client/get-request client "/api" {:directory "/project"})))))
 
@@ -127,6 +126,6 @@
   (testing "Directory parameter is merged with user params"
     (with-redefs [http/get (fn [url opts]
                              (is (= {:directory "/project" :limit 10} (:query-params opts)))
-                             {:status 200 :body {:data "test"}})]
+                             {:status 200 :body "{\"data\":\"test\"}"})]
       (let [client {:base-url "http://127.0.0.1:9711" :directory "/project" :http-opts {}}]
         (client/get-request client "/api" {:directory "/project" :limit 10})))))

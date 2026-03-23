@@ -145,35 +145,10 @@
 (defn- collect-results
   "Collect results from parallel execution channels."
   [result-chs timeout-ms]
-  (let [timeout-ch (async/timeout timeout-ms)
-        results (atom [])]
-    (async/go
-      (loop [remaining result-chs]
-        (if (empty? remaining)
-          @results
-          (let [[result port] (async/alts! (conj remaining timeout-ch))]
-            (cond
-              ;; Timeout
-              (= port timeout-ch)
-              (do
-                (swap! results into
-                       (for [ch remaining]
-                         {:status :timeout :error "Parallel execution timeout"}))
-                @results)
-
-              ;; Got result
-              (some? result)
-              (do
-                (swap! results conj result)
-                (recur (remove #(= % port) remaining)))
-
-              ;; Channel closed
-              :else
-              (recur (remove #(= % port) remaining)))))))
-    ;; Blocking wait for results
+  (let [timeout-ch (async/timeout timeout-ms)]
     (async/<!!
      (async/go
-       (loop [remaining result-chs
+       (loop [remaining (vec result-chs)
               collected []]
          (if (empty? remaining)
            collected
@@ -185,11 +160,11 @@
                        {:status :timeout :error "Timeout"}))
 
                (some? result)
-               (recur (remove #(= % port) remaining)
+               (recur (vec (remove #(= % port) remaining))
                       (conj collected result))
 
                :else
-               (recur (remove #(= % port) remaining) collected)))))))))
+               (recur (vec (remove #(= % port) remaining)) collected)))))))))
 
 (defn- compute-result-status
   "Compute overall status based on task results."

@@ -92,9 +92,10 @@
   "Make PATCH request to opencode-server"
   [client endpoint body & [params]]
   (let [url (build-url (:base-url client) endpoint)
+        json-body (json/write-str body)
         opts (-> (default-opts)
                  (merge (:http-opts client))
-                 (assoc :form-params body)
+                 (assoc :body json-body)
                  (add-query-params params))]
     (-> (http/patch url opts)
         parse-response)))
@@ -103,9 +104,10 @@
   "Make PUT request to opencode-server"
   [client endpoint body & [params]]
   (let [url (build-url (:base-url client) endpoint)
+        json-body (json/write-str body)
         opts (-> (default-opts)
                  (merge (:http-opts client))
-                 (assoc :form-params body)
+                 (assoc :body json-body)
                  (add-query-params params))]
     (-> (http/put url opts)
         parse-response)))

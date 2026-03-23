@@ -127,4 +127,4 @@
                    :routing-key "anima.session.test"
                    :context {}}
           cli-ch (cli/create-cli-channel-with-session session {})]
-      (is (= session (:default-session cli-ch))))))
+      (is (= session @(:default-session cli-ch))))))

@@ -244,6 +244,8 @@
         (close-sink (:processor s)))
       (when-let [pl @(:processing-loop this)]
         (async/close! pl))
+      (when-let [^ExecutorService exec (:executor this)]
+        (.shutdown exec))
       (reset! (:status this) :stopped))
     this)
 

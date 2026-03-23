@@ -26,7 +26,7 @@
 (defrecord CliChannel
            [running? ; atom<boolean> - is channel running?
             session-store ; SessionStore for managing sessions
-            default-session ; Default session for this CLI
+            default-session ; atom<Session> - Default session for this CLI
             bus ; Bus instance for message routing
             prompt ; Prompt string
             reader ; BufferedReader for stdin
@@ -35,9 +35,9 @@
   (start [this]
     (when-not @(:running? this)
       (reset! (:running? this) true)
-      (when (and (:session-store this) (not (:default-session this)))
+      (when (and (:session-store this) (nil? @(:default-session this)))
         (let [sess (session/create-session (:session-store this) "cli")]
-          (assoc this :default-session sess)))
+          (reset! (:default-session this) sess)))
       (async/thread
         (run-input-loop this))
       (println (str "\n" (:prompt this "anima> ") "Ready. Type 'help' for commands, 'exit' to quit."))
@@ -138,7 +138,7 @@ Just type your message to chat with the AI."))
 (defn- clear-history
   "Clear conversation history."
   [this]
-  (when-let [sess (:default-session this)]
+  (when-let [sess @(:default-session this)]
     (session/set-session-context (:session-store this) (:id sess) {:history []})
     (println "Conversation history cleared.")))
 
@@ -187,7 +187,7 @@ Just type your message to chat with the AI."))
                 (do
                   (println "Goodbye!")
                   (reset! (:running? this) false)
-                  (when-let [sess (:default-session this)]
+                  (when-let [sess @(:default-session this)]
                     (session/close-session (:session-store this) (:id sess))))
 
                 ;; Skip empty lines
@@ -206,7 +206,7 @@ Just type your message to chat with the AI."))
                 :else
                 (do
                   ;; Update session history
-                  (when-let [sess (:default-session this)]
+                  (when-let [sess @(:default-session this)]
                     (session/add-to-history (:session-store this) (:id sess)
                                             {:role "user" :content line})
                     (session/touch-session (:session-store this) (:id sess)))
@@ -216,10 +216,10 @@ Just type your message to chat with the AI."))
                     (let [inbound-msg (bus/make-inbound
                                        {:channel "cli"
                                         :sender-id "user"
-                                        :chat-id (when-let [sess (:default-session this)]
+                                        :chat-id (when-let [sess @(:default-session this)]
                                                    (:id sess))
                                         :content line
-                                        :session-key (when-let [sess (:default-session this)]
+                                        :session-key (when-let [sess @(:default-session this)]
                                                        (:routing-key sess))
                                         :metadata {:source :stdin}})]
                       (bus/publish-inbound! msg-bus inbound-msg))
@@ -250,7 +250,7 @@ Just type your message to chat with the AI."))
     (map->CliChannel
      {:running? (atom false)
       :session-store store
-      :default-session nil
+      :default-session (atom nil)
       :bus bus
       :prompt prompt
       :reader nil})))
@@ -262,7 +262,7 @@ Just type your message to chat with the AI."))
   (map->CliChannel
    {:running? (atom false)
     :session-store nil
-    :default-session session
+    :default-session (atom session)
     :bus bus
     :prompt prompt
     :reader nil}))

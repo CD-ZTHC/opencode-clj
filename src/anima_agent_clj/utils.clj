@@ -43,7 +43,7 @@
 (defn validate-required
   "Validate that required parameters are present"
   [params required-keys]
-  (let [missing (remove params required-keys)]
+  (let [missing (remove #(some? (get params %)) required-keys)]
     (when (seq missing)
       (throw (ex-info (str "Missing required parameters: " (str/join ", " missing))
                       {:missing missing

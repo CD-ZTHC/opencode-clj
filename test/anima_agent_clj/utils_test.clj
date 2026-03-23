@@ -121,7 +121,7 @@
 
   (testing "Validate required parameters with nil params"
     (let [required-keys [:name :age]]
-      (is (thrown? java.lang.NullPointerException
+      (is (thrown? clojure.lang.ExceptionInfo
                    (utils/validate-required nil required-keys)))))
 
   (testing "Validate required parameters with no required keys"

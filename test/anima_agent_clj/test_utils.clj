@@ -92,7 +92,7 @@
   []
   (str "test-" (System/currentTimeMillis) "-" (rand-int 10000)))
 
-(defn with-clean-session
+(defmacro with-clean-session
   "Execute body with a new session, cleaning up afterward.
    Binds session-id to the created session's ID."
   [client sym & body]

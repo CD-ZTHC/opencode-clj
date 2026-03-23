@@ -48,7 +48,66 @@
    [anima-agent-clj.agent.specialist-pool :as specialist-pool]
    [anima-agent-clj.agent.ai-classifier :as ai-classifier]
    [anima-agent-clj.metrics :as metrics])
-  (:import [java.util UUID Date]))
+  (:import [java.util UUID Date]
+           [java.text SimpleDateFormat]))
+
+;; ══════════════════════════════════════════════════════════════════════════════
+;; Logging Utilities
+;; ══════════════════════════════════════════════════════════════════════════════
+
+(defn get-timestamp []
+  (let [df (SimpleDateFormat. "yyyy-MM-dd HH:mm:ss.SSS")]
+    (.format df (Date.))))
+
+(def ^:dynamic *log-level* :info)
+(def log-levels {:debug 0, :info 1, :warn 2, :error 3})
+
+(defn log [level module msg & [ex]]
+  (when (>= (get log-levels level 1) (get log-levels *log-level* 1))
+    (let [ts (get-timestamp)
+          level-str (str/upper-case (name level))]
+      (if ex
+        (println (format "[%s] [%-5s] [%s] %s\nException: %s" ts level-str module msg (.getMessage ex)))
+        (println (format "[%s] [%-5s] [%s] %s" ts level-str module msg))))))
+
+;; ══════════════════════════════════════════════════════════════════════════════
+;; TTL bounded cache
+;; ══════════════════════════════════════════════════════════════════════════════
+
+(defn create-ttl-cache
+  "Creates an atom-based cache with TTL and max-size constraints."
+  [config]
+  (let [{:keys [max-size ttl-ms] :or {max-size 1000 ttl-ms (* 60 60 1000)}} config]
+    (atom {:max-size max-size
+           :ttl-ms ttl-ms
+           :entries {}})))
+
+(defn cleanup-cache! [cache-atom]
+  (let [now (System/currentTimeMillis)
+        state @cache-atom
+        ttl (:ttl-ms state)
+        max-s (:max-size state)
+        entries (:entries state)
+        valid-entries (into {} (filter (fn [[_ v]] (> (+ (:timestamp v) ttl) now)) entries))
+        pruned-entries (if (> (count valid-entries) max-s)
+                         (into {} (take max-s (sort-by #(-> % val :timestamp) > valid-entries)))
+                         valid-entries)]
+    (swap! cache-atom assoc :entries pruned-entries)
+    cache-atom))
+
+(defn cache-put! [cache-atom k v]
+  (swap! cache-atom assoc-in [:entries k] {:val v :timestamp (System/currentTimeMillis)})
+  (cleanup-cache! cache-atom)
+  v)
+
+(defn cache-get [cache-atom k]
+  (get-in @cache-atom [:entries k :val]))
+
+(defn cache-vals [cache-atom]
+  (map :val (vals (:entries @cache-atom))))
+
+(defn clear-cache! [cache-atom]
+  (swap! cache-atom assoc :entries {}))
 
 ;; ══════════════════════════════════════════════════════════════════════════════
 ;; Task Status Store - Global task tracking for status queries
@@ -66,7 +125,7 @@
             error ; Error message
             subtasks]) ; Subtask status list
 
-(defonce task-status-store (atom {}))
+(defonce task-status-store (create-ttl-cache {:max-size 100 :ttl-ms (* 24 60 60 1000)}))
 
 (defn create-task-status
   "Create a new task status entry."
@@ -83,38 +142,36 @@
                 nil
                 nil
                 (or subtasks []))]
-    (swap! task-status-store assoc id status)
+    (cache-put! task-status-store id status)
     status))
 
 (defn update-task-status!
   "Update task status."
   [task-id updates]
-  (swap! task-status-store
-         (fn [store]
-           (if-let [task (get store task-id)]
-             (assoc store task-id (merge task updates))
-             store))))
+  (let [task (cache-get task-status-store task-id)]
+    (when task
+      (cache-put! task-status-store task-id (merge task updates)))))
 
 (defn get-task-status
   "Get task status by ID."
   [task-id]
-  (get @task-status-store task-id))
+  (cache-get task-status-store task-id))
 
 (defn list-active-tasks
   "List all active (pending or running) tasks."
   []
   (filter #(#{:pending :running} (:status %))
-          (vals @task-status-store)))
+          (cache-vals task-status-store)))
 
 (defn list-all-tasks
   "List all tasks."
   []
-  (vals @task-status-store))
+  (cache-vals task-status-store))
 
 (defn clear-task-store!
   "Clear all tasks from the store."
   []
-  (reset! task-status-store {}))
+  (clear-cache! task-status-store))
 
 ;; ══════════════════════════════════════════════════════════════════════════════
 ;; OpenCode API Client Wrapper
@@ -132,70 +189,58 @@
   ([suffix]
    (str "ses" (UUID/randomUUID) (when suffix (str "-" suffix)))))
 
-(defonce session-cache (atom {}))
+(defonce session-cache (create-ttl-cache {:max-size 500 :ttl-ms (* 12 60 60 1000)}))
 
 (defn ensure-session
   "Ensure a session exists, create if needed.
    Returns the actual session ID (may be different from requested if created new).
    Caches sessions to avoid repeated lookups."
   [client requested-session-id]
-  (if-let [cached-id (get @session-cache requested-session-id)]
+  (if-let [cached-id (cache-get session-cache requested-session-id)]
     cached-id
     ;; Session doesn't exist in cache, create a new one
     ;; (OpenCode server generates the ID)
     (let [new-session (opencode/create-session client {})
           actual-id (:id new-session)]
-      (swap! session-cache assoc requested-session-id actual-id)
+      (cache-put! session-cache requested-session-id actual-id)
       actual-id)))
 
 (defn send-opencode-prompt
   "Send a prompt to OpenCode server using the SDK.
-   After sending, polls for the AI response.
-   No client-side timeout - waits for server response indefinitely."
-  [client session-id prompt _agent-name]
+   After sending, polls for the AI response with global timeout."
+  [client session-id prompt _agent-name & [{:keys [timeout-ms poll-ms] :or {timeout-ms 60000 poll-ms 1000}}]]
   (try
-    ;; Ensure session exists and get actual session ID
-    (let [actual-session-id (ensure-session client session-id)]
-      (println "  📤 发送prompt到session:" actual-session-id)
-      (println "  📦 消息:" prompt)
-      ;; Send prompt - DON'T send agent parameter as it causes empty response
-      ;; The agent parameter causes the server to return empty response
-      (let [_ (opencode/send-prompt client
-                                    actual-session-id
-                                    {:text prompt}
-                                    nil)  ;; Don't send agent!
-            ;; Poll for response - wait for AI to generate response
-            _ (println "  ⏳ 等待AI响应...")
-            _ (Thread/sleep 500) ;; Brief delay before first poll
-            ;; Poll messages to get the AI response - no timeout, wait forever
-            messages (loop []
-                         (let [msgs (try
-                                      (opencode/list-messages client actual-session-id)
-                                      (catch Exception e
-                                        (println "  ⚠️ 获取消息失败:" (.getMessage e))
-                                        []))
-                               ;; Get the last assistant message
-                               last-assistant (some #(when (= "assistant" (get-in % [:info :role])) %)
-                                                    (reverse msgs))]
-                           (if last-assistant
-                             msgs
-                             (do
-                               (Thread/sleep 1000)
-                               (recur)))))]
-        (println "  📥 收到" (count messages) "条消息")
-        (if-let [last-response (some #(when (= "assistant" (get-in % [:info :role])) %)
-                                     (reverse messages))]
-          (let [text-parts (filter #(= "text" (:type %)) (:parts last-response))
-                response-text (str/join "\n" (map :text text-parts))]
-            (println "  ✅ AI响应:" (or response-text "(无文本内容)"))
-            {:status :success
-             :result last-response})
-          {:status :success
-           :result {:parts [{:type "text" :text "处理完成"}]}})))
+    (let [actual-session-id (ensure-session client session-id)
+          start-time (System/currentTimeMillis)]
+      (log :info "opencode" (str "📤 发送prompt到session: " actual-session-id "\n📦 消息: " prompt))
+      (opencode/send-prompt client actual-session-id {:text prompt} nil)
+      (log :info "opencode" "⏳ 等待AI响应...")
+      (Thread/sleep 500)
+      (loop []
+        (let [now (System/currentTimeMillis)]
+          (if (> (- now start-time) timeout-ms)
+            (do
+              (log :error "opencode" "❌ AI响应超时 (Timeout)" nil)
+              {:status :error :error "AI response timeout"})
+            (let [msgs (try
+                         (opencode/list-messages client actual-session-id)
+                         (catch Exception e
+                           (log :warn "opencode" "获取消息失败" e)
+                           []))
+                  last-assistant (some #(when (= "assistant" (get-in % [:info :role])) %) (reverse msgs))]
+              (if last-assistant
+                (do
+                  (log :info "opencode" (str "📥 收到 " (count msgs) " 条消息"))
+                  (let [text-parts (filter #(= "text" (:type %)) (:parts last-assistant))
+                        response-text (str/join "\n" (map :text text-parts))]
+                    (log :info "opencode" (str "✅ AI响应: " (or response-text "(无文本内容)")))
+                    {:status :success :result last-assistant}))
+                (do
+                  (Thread/sleep poll-ms)
+                  (recur))))))))
     (catch Exception e
-      (println "  ❌ send-opencode-prompt 错误:" (.getMessage e))
-      {:status :error
-       :error (.getMessage e)})))
+      (log :error "opencode" "❌ send-opencode-prompt 错误" e)
+      {:status :error :error (.getMessage e)})))
 
 ;; ══════════════════════════════════════════════════════════════════════════════
 ;; Real OpenCode Specialists
@@ -385,16 +430,14 @@
 (defn update-subtask-status!
   "Update status of a specific subtask."
   [task-id subtask-name new-status]
-  (swap! task-status-store
-         (fn [store]
-           (if-let [task (get store task-id)]
-             (let [updated-subtasks (map (fn [st]
-                                          (if (= (:name st) subtask-name)
-                                            (assoc st :status new-status)
-                                            st))
-                                        (:subtasks task))]
-               (assoc store task-id (assoc task :subtasks updated-subtasks)))
-             store))))
+  (let [task (cache-get task-status-store task-id)]
+    (when task
+      (let [updated-subtasks (map (fn [st]
+                                    (if (= (:name st) subtask-name)
+                                      (assoc st :status new-status)
+                                      st))
+                                  (:subtasks task))]
+        (cache-put! task-status-store task-id (assoc task :subtasks updated-subtasks))))))
 
 (defn execute-background-task
   "Execute a task in the background, updating status as it progresses.
@@ -745,13 +788,22 @@
       (println "✅ 系统初始化完成")
       (println "\n💬 开始对话 (输入 'exit' 退出):\n")
 
+      ;; Graceful Shutdown Hook
+      (.addShutdownHook (Runtime/getRuntime)
+        (Thread. (fn []
+                   (println "\n⚠️ 收到中断信号，执行优雅停机...")
+                   (stop-cli-channel! cli-channel)
+                   (stop-dialog-agent! dialog-agent)
+                   (orchestrator/stop-orchestrator! orchestrator)
+                   (println "✅ 系统已安全停止"))))
+
       ;; Wait for dialog agent to stop
       (loop []
         (when (= :running @(:status dialog-agent))
           (Thread/sleep 100)
           (recur)))
 
-      ;; Cleanup
+      ;; Cleanup (for normal exit)
       (println "\n\n🛑 正在停止系统...")
       (stop-cli-channel! cli-channel)
       (stop-dialog-agent! dialog-agent)
@@ -763,11 +815,11 @@
 (defn -main
   "Main entry point."
   [& args]
-  (let [opencode-url (or (some->> args
-                                  (drop-while #(not= "--url" %))
-                                  second)
-                         "http://127.0.0.1:9711")]
-    (run-demo {:opencode-url opencode-url})))
+  (let [args-map (apply hash-map (if (even? (count args)) args (concat args [""])))
+        opencode-url (get args-map "--url" "http://127.0.0.1:9711")
+        classifier-model (get args-map "--model" "claude-3-5-haiku-latest")]
+    (run-demo {:opencode-url opencode-url
+               :classifier-model classifier-model})))
 
 (comment
   ;; REPL Usage
